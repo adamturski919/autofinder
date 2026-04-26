@@ -1,136 +1,103 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
-function generateCars() {
-  const brands = [
-    "Tesla", "BMW", "Audi", "Mercedes", "Toyota",
-    "Hyundai", "Ford", "Volkswagen", "Skoda", "Nissan"
-  ];
+const cars = Array.from({ length: 120 }).map((_, i) => {
+  const types = ["elektryk", "spalinowy"];
+  const cats = ["suv", "sedan", "kombi", "sport", "hatchback"];
 
-  const types = ["SUV", "Sport", "Combi", "Sedan", "Hatchback"];
-  const fuels = ["Elektryczny", "Spalinowy", "Hybryda"];
+  return {
+    id: i,
+    name: `AutoFinder Car ${i + 1}`,
+    type: types[i % 2],
+    category: cats[i % cats.length],
+    power: 150 + (i % 500),
+    range: 300 + (i % 400),
+    price: 80000 + i * 2500,
+    img: `https://source.unsplash.com/600x400/?car,${cats[i % cats.length]}`
+  };
+});
 
-  const cars = [];
-
-  for (let i = 1; i <= 150; i++) {
-    const brand = brands[i % brands.length];
-
-    const fuel =
-      i % 3 === 0 ? "Elektryczny" :
-      i % 3 === 1 ? "Spalinowy" :
-      "Hybryda";
-
-    cars.push({
-      id: i,
-      brand,
-      model: "Model " + i,
-      type: types[i % types.length],
-      fuel,
-      power: 120 + (i % 500),
-      year: 2010 + (i % 15),
-      img: "https://via.placeholder.com/600x300?text=Car+" + i,
-      desc: "Nowoczesny samochód o świetnym stosunku mocy do komfortu jazdy."
-    });
-  }
-
-  return cars;
-}
-
-export default function Home() {
-  const [selected, setSelected] = useState<any>(null);
+export default function Page() {
   const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("all");
 
-  const cars = generateCars();
-
-  const filtered = cars.filter(c =>
-    `${c.brand} ${c.model}`.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = useMemo(() => {
+    return cars.filter((car) => {
+      const s = car.name.toLowerCase().includes(search.toLowerCase());
+      const f = filter === "all" || car.type === filter || car.category === filter;
+      return s && f;
+    });
+  }, [search, filter]);
 
   return (
-    <div style={{
-      fontFamily: "Arial",
-      padding: 30,
-      minHeight: "100vh",
-      background: "#cfe8ff",
-      color: "#000"
-    }}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white">
 
-      <h1 style={{ fontSize: 32 }}>
-        🚗 Mega Portal Samochodowy (150+ aut)
-      </h1>
+      {/* HEADER */}
+      <header className="p-6 border-b border-white/10">
+        <h1 className="text-4xl font-bold tracking-tight">🚗 AutoFinder</h1>
+        <p className="text-white/60 mt-1">
+          Znajdź idealne auto dla siebie
+        </p>
+      </header>
 
-      {/* SZUKAJ */}
-      <input
-        placeholder="Szukaj auta..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        style={{
-          padding: 12,
-          width: "100%",
-          marginTop: 20,
-          borderRadius: 10,
-          border: "1px solid black"
-        }}
-      />
+      {/* SEARCH + FILTERS */}
+      <div className="p-6 flex flex-col gap-4">
 
-      {/* LISTA */}
-      {!selected && (
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-          gap: 20,
-          marginTop: 30
-        }}>
-          {filtered.map(car => (
-            <div
-              key={car.id}
-              onClick={() => setSelected(car)}
-              style={{
-                background: "white",
-                borderRadius: 15,
-                overflow: "hidden",
-                cursor: "pointer",
-                boxShadow: "0 5px 15px rgba(0,0,0,0.2)"
-              }}
+        <input
+          className="w-full p-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 outline-none"
+          placeholder="🔍 Szukaj auta..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+
+        <div className="flex flex-wrap gap-2">
+          {["all", "elektryk", "spalinowy", "suv", "sedan", "kombi", "sport"].map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className="px-4 py-1 rounded-full bg-white/10 hover:bg-white/20 transition"
             >
-              <img
-                src={car.img}
-                style={{ width: "100%", height: 140 }}
-              />
-
-              <div style={{ padding: 15 }}>
-                <h2>{car.brand} {car.model}</h2>
-                <p>⚡ {car.power} KM</p>
-                <p>📅 {car.year}</p>
-                <p>🔋 {car.fuel}</p>
-                <p>🚙 {car.type}</p>
-              </div>
-            </div>
+              {f}
+            </button>
           ))}
         </div>
-      )}
+      </div>
 
-      {/* SZCZEGÓŁY */}
-      {selected && (
-        <div style={{ marginTop: 30 }}>
-          <button onClick={() => setSelected(null)}>
-            ⬅ Wróć
-          </button>
+      {/* GRID */}
+      <div className="p-6 grid md:grid-cols-3 gap-6">
 
-          <div style={{ background: "white", padding: 20, borderRadius: 15 }}>
-            <img src={selected.img} style={{ width: "100%", borderRadius: 10 }} />
+        {filtered.map((car) => (
+          <div
+            key={car.id}
+            className="rounded-2xl overflow-hidden bg-white/5 border border-white/10 hover:scale-[1.02] transition"
+          >
+            <img
+              src={car.img}
+              className="w-full h-44 object-cover"
+            />
 
-            <h1>{selected.brand} {selected.model}</h1>
-            <p>{selected.desc}</p>
+            <div className="p-4">
+              <h2 className="text-lg font-bold">{car.name}</h2>
 
-            <p>⚡ Moc: {selected.power} KM</p>
-            <p>📅 Rok: {selected.year}</p>
-            <p>🔋 Napęd: {selected.fuel}</p>
-            <p>🚙 Typ: {selected.type}</p>
+              <div className="text-sm text-white/60 mt-2 space-y-1">
+                <p>⚡ Moc: {car.power} KM</p>
+                <p>🔋 Zasięg: {car.range} km</p>
+                <p>💰 Cena: {car.price.toLocaleString()} zł</p>
+              </div>
+
+              <div className="mt-3 text-xs text-white/40">
+                {car.type} • {car.category}
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        ))}
+      </div>
+
+      {/* FOOTER */}
+      <footer className="p-6 text-center text-white/40 text-sm border-t border-white/10">
+        AutoFinder • nowoczesna wyszukiwarka samochodów
+      </footer>
 
     </div>
   );
